@@ -1,0 +1,6 @@
+{
+  "name": "Buhay Pinoy",
+  "description": "3D open-world Filipino life simulator in Laguna with dynamic Philippine town exploration, jobs, NPCs, sari-sari stores, and economy.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

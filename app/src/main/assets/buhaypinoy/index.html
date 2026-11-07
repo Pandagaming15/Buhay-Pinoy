@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="tl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Buhay Pinoy - 3D Open World Life Simulator</title>
+  <link rel="stylesheet" href="css/game.css">
+</head>
+<body>
+  <!-- 3D Canvas Container -->
+  <div id="canvas-container"></div>
+
+  <!-- Loading Splash Screen -->
+  <div id="game-loading">
+    <div class="loading-logo-box">🌴</div>
+    <h1 class="loading-title">BUHAY PINOY</h1>
+    <p class="loading-subtitle">Open World Philippine Life Simulator • Calamba, Laguna</p>
+    <div class="loading-progress-track">
+      <div class="loading-progress-bar"></div>
+    </div>
+  </div>
+
+  <!-- In-Game HUD -->
+  <div id="hud-overlay">
+    <!-- Top Bar -->
+    <div class="top-bar">
+      <!-- Player Profile Card -->
+      <div class="player-card">
+        <div class="avatar-badge">🇵🇭</div>
+        <div class="player-info">
+          <div class="player-name-row">
+            <span class="player-name">Juan dela Cruz</span>
+            <span class="player-location">📍 Brgy. Real</span>
+          </div>
+          <div class="bar-row">
+            <div class="stat-bar-container" title="Buhay / Health">
+              <span class="stat-icon">❤️</span>
+              <div class="stat-track"><div id="health-fill" class="stat-fill health-fill"></div></div>
+            </div>
+            <div class="stat-bar-container" title="Lakas / Stamina">
+              <span class="stat-icon">⚡</span>
+              <div class="stat-track"><div id="stamina-fill" class="stat-fill stamina-fill"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Action Buttons -->
+      <div class="quick-buttons">
+        <button class="hud-btn" onclick="window.gameUI.openInventoryModal()" title="Bag / Gamit">
+          <span>🎒</span> <span>Bag</span>
+        </button>
+        <button class="hud-btn" onclick="window.gameUI.openMapModal()" title="Mapa ng Calamba">
+          <span>🗺️</span> <span>Mapa</span>
+        </button>
+        <button class="hud-btn" onclick="window.gameUI.openJobsModal()" title="Raket / Trabaho">
+          <span>💼</span> <span>Raket</span>
+        </button>
+        <button class="hud-btn" onclick="window.gameUI.openSettingsModal()" title="Settings">
+          <span>⚙️</span>
+        </button>
+        <button class="hud-btn" onclick="window.gameUI.openPauseModal()" title="Pause">
+          <span>⏸️</span>
+        </button>
+      </div>
+
+      <!-- Wallet & Clock -->
+      <div class="stats-right">
+        <div class="wallet-badge" title="Player Wallet">
+          <span class="wallet-peso">₱</span>
+          <span id="wallet-amount" class="wallet-amount">500</span>
+        </div>
+        <div class="time-badge">
+          <span id="game-time-text">☀️ 08:00 AM</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Basketball Mini-Game HUD -->
+    <div id="bball-hud">
+      <div style="font-size: 11px; font-weight: 700; color: #f97316;">🏀 3-POINT SHOOTOUT</div>
+      <div id="bball-score-val" class="bball-score">0 / 3</div>
+      <div style="width: 110px; height: 8px; background: rgba(255,255,255,0.2); border-radius: 4px; overflow: hidden;">
+        <div id="bball-power-bar" style="width: 0%; height: 100%; background: #ea580c; border-radius: 4px;"></div>
+      </div>
+      <button class="bball-btn" onclick="window.basketballGame.shoot()">TIRA! (Shoot)</button>
+    </div>
+
+    <!-- Center Interaction Prompt Banner -->
+    <div id="interaction-prompt-container" class="interaction-prompt-container">
+      <div id="interaction-prompt" class="interaction-prompt">
+        <span class="prompt-key">E</span>
+        <span id="prompt-text" class="prompt-text">Makipag-usap</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Touch Controls -->
+  <div id="mobile-controls">
+    <!-- Virtual Thumbstick on Bottom-Left -->
+    <div class="joystick-zone">
+      <div id="joystick-base" class="joystick-base">
+        <div id="joystick-thumb" class="joystick-thumb"></div>
+      </div>
+    </div>
+
+    <!-- Action Buttons Cluster on Bottom-Right -->
+    <div class="action-cluster">
+      <button id="btn-sprint" class="action-btn btn-sprint" title="Takbo / Sprint">
+        <span class="action-icon">⚡</span>
+        <span class="action-label">RUN</span>
+      </button>
+      <button id="btn-jump" class="action-btn btn-jump" title="Talon / Jump">
+        <span class="action-icon">⬆️</span>
+        <span class="action-label">JUMP</span>
+      </button>
+      <button id="btn-interact" class="action-btn btn-interact" title="Interact / Talk">
+        <span class="action-icon">💬</span>
+        <span class="action-label">ACTION</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Notification Toast -->
+  <div id="notification-toast"></div>
+
+  <!-- ==================== MODALS ==================== -->
+
+  <!-- DIALOGUE MODAL -->
+  <div id="dialogue-modal" class="modal-backdrop">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <div class="modal-title-row">
+          <span id="dialogue-npc-avatar" class="modal-icon">👤</span>
+          <div>
+            <div id="dialogue-npc-name" class="modal-title">Aling Nena</div>
+            <div id="dialogue-npc-role" class="modal-subtitle">Tindera ng Sari-Sari Store</div>
+          </div>
+        </div>
+        <button class="close-btn" onclick="window.game.dialogueSystem.closeDialogue()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div id="dialogue-speech-text" class="dialogue-bubble">
+          "O iho, pabili ka ba ng pandesal o softdrinks?"
+        </div>
+
+        <div class="dialogue-options">
+          <button class="dialogue-opt-btn" onclick="window.game.dialogueSystem.openShop()">
+            <span>🛒 Pabili po! (Buksan ang Tindahan)</span> <span>›</span>
+          </button>
+          <button class="dialogue-opt-btn" onclick="window.game.dialogueSystem.askJob()">
+            <span>💼 May raket o trabaho ba rito?</span> <span>›</span>
+          </button>
+          <button class="dialogue-opt-btn" onclick="window.game.dialogueSystem.askChika()">
+            <span>🗣️ May bagong chika ba sa barangay?</span> <span>›</span>
+          </button>
+        </div>
+
+        <!-- Custom Taglish Question Input -->
+        <div style="margin-top: 4px;">
+          <div style="font-size: 11px; color: #94a3b8; margin-bottom: 4px;">Magtanong ng sarili mong tanong (Taglish):</div>
+          <div class="ai-chat-input-row">
+            <input id="ai-chat-input-field" type="text" class="ai-chat-input" placeholder="Hal: Saan ang palengke? / Magkano pamasahe?" onkeydown="if(event.key==='Enter') window.game.dialogueSystem.sendCustomQuestion(this.value)">
+            <button class="ai-chat-send" onclick="window.game.dialogueSystem.sendCustomQuestion(document.getElementById('ai-chat-input-field').value)">Tanong</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STORE / MARKET MODAL -->
+  <div id="store-modal" class="modal-backdrop">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <div class="modal-title-row">
+          <span class="modal-icon">🏪</span>
+          <div>
+            <div id="store-title" class="modal-title">Aling Nena's Sari-Sari Store</div>
+            <div class="modal-subtitle">Tindahan ng Bayan • Calamba, Laguna</div>
+          </div>
+        </div>
+        <button class="close-btn" onclick="window.gameUI.closeStoreModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="store-grid" class="item-grid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INVENTORY MODAL -->
+  <div id="inventory-modal" class="modal-backdrop">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <div class="modal-title-row">
+          <span class="modal-icon">🎒</span>
+          <div>
+            <div class="modal-title">Mga Gamit sa Bag</div>
+            <div class="modal-subtitle">Inventory & Food Supply</div>
+          </div>
+        </div>
+        <button class="close-btn" onclick="window.gameUI.closeInventoryModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="inventory-grid" class="item-grid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JOBS / RAKET MODAL -->
+  <div id="jobs-modal" class="modal-backdrop">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <div class="modal-title-row">
+          <span class="modal-icon">💼</span>
+          <div>
+            <div class="modal-title">Mga Raket sa Barangay</div>
+            <div class="modal-subtitle">Kumita ng Pesos sa Sari-Saring Trabaho</div>
+          </div>
+        </div>
+        <button class="close-btn" onclick="window.gameUI.closeJobsModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <!-- Job 1 -->
+        <div class="job-card">
+          <div class="job-info">
+            <h4>📦 Store Helper kay Aling Nena</h4>
+            <div class="job-desc">Mag-ayos ng mga delata, sitsirya, at mantika sa tindahan.</div>
+            <div class="job-pay">+₱120 Pesos</div>
+          </div>
+          <button class="job-start-btn" onclick="executeJob('Store Helper', 120, 8)">Magtrabaho (8s)</button>
+        </div>
+
+        <!-- Job 2 -->
+        <div class="job-card">
+          <div class="job-info">
+            <h4>🍌 Talipapa Kargador kay Mang Kanor</h4>
+            <div class="job-desc">Magbuhat ng mga kahon ng mangga at saging mula sa jeep.</div>
+            <div class="job-pay">+₱150 Pesos</div>
+          </div>
+          <button class="job-start-btn" onclick="executeJob('Kargador sa Talipapa', 150, 10)">Magbuhat (10s)</button>
+        </div>
+
+        <!-- Job 3 -->
+        <div class="job-card">
+          <div class="job-info">
+            <h4>🍳 Server sa Carinderia ni Nanay Rosa</h4>
+            <div class="job-desc">Maghain ng tapsilog at maghugas ng kaldero sa kainan.</div>
+            <div class="job-pay">+₱130 Pesos</div>
+          </div>
+          <button class="job-start-btn" onclick="executeJob('Carinderia Server', 130, 8)">Maghain (8s)</button>
+        </div>
+
+        <!-- Job 4 -->
+        <div class="job-card">
+          <div class="job-info">
+            <h4>🏀 Basketball 3-Point Shootout kay Kuya Jun</h4>
+            <div class="job-desc">Pumunta sa covered court at ipasok ang 3 tira sa ring!</div>
+            <div class="job-pay">+₱100 Pesos</div>
+          </div>
+          <button class="job-start-btn" style="background: linear-gradient(135deg, #ea580c, #c2410c);" onclick="window.gameUI.closeJobsModal(); window.basketballGame.startShootout();">Pumunta sa Court</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAP MODAL -->
+  <div id="map-modal" class="modal-backdrop">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <div class="modal-title-row">
+          <span class="modal-icon">🗺️</span>
+          <div>
+            <div class="modal-title">Mapa ng Brgy. Real, Calamba</div>
+            <div class="modal-subtitle">Laguna Province, Philippines</div>
+          </div>
+        </div>
+        <button class="close-btn" onclick="window.gameUI.closeMapModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="map-canvas-container">
+          <canvas id="map-canvas"></canvas>
+        </div>
+        <div class="map-legend">
+          <div class="legend-item"><div class="legend-dot" style="background: #f59e0b;"></div> Aling Nena's Store</div>
+          <div class="legend-item"><div class="legend-dot" style="background: #3b82f6;"></div> Carinderia</div>
+          <div class="legend-item"><div class="legend-dot" style="background: #10b981;"></div> Talipapa</div>
+          <div class="legend-item"><div class="legend-dot" style="background: #eab308;"></div> Brgy. Hall</div>
+          <div class="legend-item"><div class="legend-dot" style="background: #ea580c;"></div> Basketball Court</div>
+          <div class="legend-item"><div class="legend-dot" style="background: #ef4444;"></div> Jeepney Terminal</div>
+          <div class="legend-item"><div class="legend-dot" style="background: #06b6d4;"></div> Tricycle TODA</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS MODAL -->
+  <div id="settings-modal" class="modal-backdrop">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <div class="modal-title-row">
+          <span class="modal-icon">⚙️</span>
+          <div>
+            <div class="modal-title">Game Settings</div>
+            <div class="modal-subtitle">Graphics, Sounds & Time</div>
+          </div>
+        </div>
+        <button class="close-btn" onclick="window.gameUI.closeSettingsModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="settings-row">
+          <span class="settings-label">Graphics Quality</span>
+          <select class="settings-select" onchange="if(window.game) window.game.renderer.setPixelRatio(this.value === 'high' ? 2 : (this.value === 'med' ? 1.5 : 1))">
+            <option value="high" selected>Mataas (High)</option>
+            <option value="med">Katamtaman (Medium)</option>
+            <option value="low">Mabilis (Low Performance)</option>
+          </select>
+        </div>
+
+        <div class="settings-row">
+          <span class="settings-label">Sound Effects (SFX)</span>
+          <select class="settings-select" onchange="if(window.soundSystem) window.soundSystem.enabled = (this.value === 'on')">
+            <option value="on" selected>Naka-on (Enabled)</option>
+            <option value="off">Naka-off (Disabled)</option>
+          </select>
+        </div>
+
+        <div class="settings-row">
+          <span class="settings-label">Oras ng Araw / Day-Night Speed</span>
+          <select class="settings-select" onchange="if(window.game) window.game.timeScale = parseFloat(this.value)">
+            <option value="0.05" selected>Normal</option>
+            <option value="0.15">Mabilis (Fast)</option>
+            <option value="0">Ihinto (Freeze Time)</option>
+          </select>
+        </div>
+
+        <div class="settings-row">
+          <span class="settings-label">Camera Sensitivity</span>
+          <input type="range" min="1" max="10" value="5" class="settings-slider" oninput="if(window.game) window.game.cameraController.sensitivity = 0.001 * this.value">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAUSE MENU MODAL -->
+  <div id="pause-modal" class="modal-backdrop">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <div class="modal-title-row">
+          <span class="modal-icon">⏸️</span>
+          <div>
+            <div class="modal-title">Naka-Pause ang Laro</div>
+            <div class="modal-subtitle">Buhay Pinoy Simulator</div>
+          </div>
+        </div>
+        <button class="close-btn" onclick="window.gameUI.closePauseModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="pause-menu-actions">
+          <button class="pause-btn primary" onclick="window.gameUI.closePauseModal()">Ipagpatuloy (Resume)</button>
+          <button class="pause-btn" onclick="window.game.player.position.set(0, 0, 5); window.gameUI.closePauseModal(); window.gameUI.showToast('Nai-reset ang pwesto ng character!');">I-reset ang Pwesto (Stuck Fix)</button>
+          <div style="background: rgba(255,255,255,0.05); padding: 14px; border-radius: 14px; font-size: 12px; line-height: 1.6; color: #cbd5e1;">
+            <b>Desktop Controls:</b><br>
+            • <b>W, A, S, D / Arrows:</b> Lakad / Movement<br>
+            • <b>Shift:</b> Takbo / Sprint<br>
+            • <b>Space:</b> Talon / Jump<br>
+            • <b>E:</b> Makipag-usap / Interaction<br>
+            • <b>Mouse Drag:</b> Tingin sa Paligid / Camera Look<br>
+            • <b>I:</b> Bag / Inventory | <b>M:</b> Mapa
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Helper Job Executor Script -->
+  <script>
+    function executeJob(jobTitle, payAmount, durationSec) {
+      window.gameUI.closeJobsModal();
+      window.gameUI.showToast(`Nagsimula ang trabaho: ${jobTitle}... (${durationSec}s)`);
+
+      let remaining = durationSec;
+      const interval = setInterval(() => {
+        remaining -= 1;
+        if (remaining > 0) {
+          window.gameUI.showToast(`Nagtatrabaho: ${jobTitle}... (${remaining}s)`);
+        } else {
+          clearInterval(interval);
+          if (window.soundSystem) window.soundSystem.playFanfare();
+          window.game.economy.addMoney(payAmount, `suweldo sa ${jobTitle}!`);
+        }
+      }, 1000);
+    }
+  </script>
+
+  <!-- Load Game Scripts -->
+  <script src="js/three.min.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/models.js"></script>
+  <script src="js/world.js"></script>
+  <script src="js/player.js"></script>
+  <script src="js/camera.js"></script>
+  <script src="js/npcs.js"></script>
+  <script src="js/economy.js"></script>
+  <script src="js/basketball.js"></script>
+  <script src="js/dialogue.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
